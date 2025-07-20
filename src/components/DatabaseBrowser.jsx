@@ -13,7 +13,7 @@ const DatabaseManager = ({ refreshSignal }) => {
 
   const fetchRecords = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/records`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/records`);
       const data = await res.json();
       setRecords(data);
     } catch (err) {
@@ -34,7 +34,7 @@ const DatabaseManager = ({ refreshSignal }) => {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/records/${editId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/records/${editId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(edited)
@@ -49,7 +49,7 @@ const DatabaseManager = ({ refreshSignal }) => {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/records/${id}`, { method: 'DELETE' });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/records/${id}`, { method: 'DELETE' });
       const updated = await res.json();
       setRecords(updated);
     } catch (err) {

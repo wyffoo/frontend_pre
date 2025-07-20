@@ -17,7 +17,7 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
     files.forEach(file => formData.append("files", file));
 
     try {
-      const res = await fetch("http://localhost:5000/api/extract", { method: "POST", body: formData });
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/extract`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Server error");
       setResult({ ...data, pr_id: "", title: "", softwareRelease: "", softwareBuild: "", attachmentIds: "", groupIncharge: "", identification: "", explanation: "", category: "" });
@@ -28,20 +28,21 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
     }
   };
 
-  const handleConfirm = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/records", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...result, filename: files[0]?.name || "manual_entry.eml" })
-      });
-      if (!res.ok) throw new Error("❌ Failed to save");
-      setResult({});
-      onConfirm();  // Refresh DB
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+ const handleConfirm = async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...result, filename: files[0]?.name || "manual_entry.eml" })
+    });
+    if (!res.ok) throw new Error("❌ Failed to save");
+    setResult({});
+    onConfirm();  // Refresh DB
+  } catch (err) {
+    setError(err.message);
+  }
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
