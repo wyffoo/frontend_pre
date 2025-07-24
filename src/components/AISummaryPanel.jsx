@@ -3,6 +3,7 @@ import { Loader2 } from 'lucide-react';
 
 const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfirm }) => {
   const [error, setError] = useState("");
+  const [expandedFields, setExpandedFields] = useState({});
 
   const handleRegenerate = async () => {
     if (!files || files.length === 0) {
@@ -28,25 +29,28 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
     }
   };
 
- const handleConfirm = async () => {
-  try {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...result, filename: files[0]?.name || "manual_entry.eml" })
-    });
-    if (!res.ok) throw new Error("❌ Failed to save");
-    setResult({});
-    onConfirm();  // Refresh DB
-  } catch (err) {
-    setError(err.message);
-  }
-};
-
+  const handleConfirm = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...result, filename: files[0]?.name || "manual_entry.eml" })
+      });
+      if (!res.ok) throw new Error("❌ Failed to save");
+      setResult({});
+      onConfirm();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setResult(prev => ({ ...prev, [name]: value }));
+  };
+
+  const toggleExpand = (key) => {
+    setExpandedFields(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const fields = [
@@ -60,20 +64,49 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
 
   return (
     <section>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">AI Analysis Results</h2>
-        <button onClick={handleRegenerate} disabled={loading || !files} className={`text-sm border px-3 py-1 rounded ${loading ? "bg-blue-300 cursor-wait" : "bg-white hover:bg-blue-50"}`}>
-          {loading ? <Loader2 className="animate-spin w-4 h-4" /> : null} Regenerate with AI
-        </button>
-      </div>
+<button
+  onClick={handleRegenerate}
+  disabled={loading || !files}
+  className={`text-sm px-4 py-2 rounded shadow transition ${
+    loading || !files
+      ? "bg-blue-300 text-white cursor-not-allowed"
+      : "bg-blue-600 hover:bg-blue-700 text-white"
+  }`}
+>
+  {loading ? <Loader2 className="animate-spin w-4 h-4 inline mr-1" /> : "🤖"}
+  Regenerate with AI
+</button>
+
+
+      <h2 className="text-lg font-semibold mb-4">AI Analysis Results</h2>
 
       <div className="grid gap-4">
-        {fields.map(({ key, label }) => (
-          <div key={key}>
-            <label className="font-medium">{label}</label>
-            <textarea name={key} value={result[key] || ""} onChange={handleChange} className="w-full border rounded p-2 mt-1 text-sm" rows={key === "description" || key === "resolution" ? 6 : 2} />
-          </div>
-        ))}
+        {fields.map(({ key, label }) => {
+          const isLongField = key === "description" || key === "resolution";
+          const expanded = expandedFields[key];
+          return (
+            <div key={key} className="relative">
+              <label className="font-medium">{label}</label>
+              <textarea
+                name={key}
+                value={result[key] || ""}
+                onChange={handleChange}
+                className="w-full border rounded p-2 mt-1 text-sm resize-y overflow-auto"
+                rows={expanded ? 20 : isLongField ? 10 : 2}
+                style={{ transition: "height 0.2s ease" }}
+              />
+              {isLongField && (
+                <button
+                  type="button"
+                  className="absolute right-2 top-1 text-xs text-blue-600 hover:underline"
+                  onClick={() => toggleExpand(key)}
+                >
+                  {expanded ? "Collapse ▲" : "Expand ▼"}
+                </button>
+              )}
+            </div>
+          );
+        })}
 
         <div>
           <label className="font-medium">Category</label>

@@ -10,18 +10,27 @@ const DatabaseManager = ({ refreshSignal }) => {
   const [records, setRecords] = useState([]);
   const [editId, setEditId] = useState(null);
   const [edited, setEdited] = useState({});
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchRecords = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records`);
+      const query = new URLSearchParams({ search, page }).toString();
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records?${query}`);
       const data = await res.json();
-      setRecords(data);
+      setRecords(data.records || []);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
       console.error("❌ Failed to fetch records", err);
+      setRecords([]);
+      setTotalPages(1);
     }
   };
 
-  useEffect(() => { fetchRecords(); }, [refreshSignal]);
+  useEffect(() => {
+    fetchRecords();
+  }, [refreshSignal, search, page]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,10 +38,7 @@ const DatabaseManager = ({ refreshSignal }) => {
   };
 
   const handleSave = async () => {
-    if (!editId) {
-      console.warn("❗ No record is selected for editing.");
-      return;
-    }
+    if (!editId) return;
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records/${editId}`, {
         method: 'PATCH',
@@ -40,7 +46,7 @@ const DatabaseManager = ({ refreshSignal }) => {
         body: JSON.stringify(edited)
       });
       const updated = await res.json();
-      setRecords(updated);
+      setRecords(updated.records || []);
       setEditId(null);
     } catch (err) {
       console.error("❌ Failed to update record", err);
@@ -51,7 +57,7 @@ const DatabaseManager = ({ refreshSignal }) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/records/${id}`, { method: 'DELETE' });
       const updated = await res.json();
-      setRecords(updated);
+      setRecords(updated.records || []);
     } catch (err) {
       console.error("❌ Failed to delete record", err);
     }
@@ -60,6 +66,16 @@ const DatabaseManager = ({ refreshSignal }) => {
   return (
     <section className="p-4 max-w-full overflow-x-auto">
       <h2 className="text-2xl font-bold mb-4 text-blue-800">📘 Database Records</h2>
+
+      <div className="mb-3">
+        <input
+          type="text"
+          placeholder="🔍 Search description/title..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          className="border px-2 py-1 text-sm w-1/3"
+        />
+      </div>
 
       <table className="table-auto w-full border-collapse text-sm">
         <thead className="bg-gray-100">
@@ -71,7 +87,7 @@ const DatabaseManager = ({ refreshSignal }) => {
           </tr>
         </thead>
         <tbody>
-          {records.map(record => (
+          {(records || []).map(record => (
             <tr key={record.id} className="border-t">
               {fields.map(f => (
                 <td key={f} className="border p-1">
@@ -119,6 +135,24 @@ const DatabaseManager = ({ refreshSignal }) => {
           ))}
         </tbody>
       </table>
+
+      <div className="mt-4 flex justify-between items-center">
+        <button
+          disabled={page === 1}
+          onClick={() => setPage(prev => Math.max(prev - 1, 1))}
+          className="text-sm px-3 py-1 border rounded disabled:opacity-50"
+        >
+          ◀ Prev
+        </button>
+        <span className="text-sm">Page {page} of {totalPages}</span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => setPage(prev => Math.min(prev + 1, totalPages))}
+          className="text-sm px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next ▶
+        </button>
+      </div>
     </section>
   );
 };
