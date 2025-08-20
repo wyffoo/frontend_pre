@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 const fields = [
-  "description", "pr_id", "title", "softwareRelease", "softwareBuild",
-  "attachmentIds", "groupIncharge", "identification", "resolution",
-  "subSystem", "rootCause", "explanation", "category"
+  "description","pr_id","title","softwareRelease","softwareBuild",
+  "attachmentIds","groupIncharge","identification","resolution",
+  "subSystem","root_cause","explanation","category"
 ];
 
 const DatabaseManager = ({ refreshSignal }) => {
@@ -13,6 +14,7 @@ const DatabaseManager = ({ refreshSignal }) => {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [prontoLoading, setProntoLoading] = useState(false);
 
   const fetchRecords = async () => {
     try {
@@ -63,18 +65,57 @@ const DatabaseManager = ({ refreshSignal }) => {
     }
   };
 
+  // ✅ 调用后端 /pronto/sync，同步最近 100 条并刷新
+  const handleProntoUpdate = async () => {
+    try {
+      setProntoLoading(true);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/pronto/sync`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100, autoCategorizeNonCNN: false })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "PRONTO sync failed");
+      }
+      await fetchRecords();
+    } catch (e) {
+      console.error("PRONTO update failed:", e);
+      alert(`PRONTO 同步失败：${e.message}`);
+    } finally {
+      setProntoLoading(false);
+    }
+  };
+
   return (
     <section className="p-4 max-w-full overflow-x-auto">
-      <h2 className="text-2xl font-bold mb-4 text-blue-800">📘 Database Records</h2>
+      {/* 顶部工具栏：标题 + PRONTO 更新按钮 + 搜索框 */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl font-bold text-blue-800">📘 Database Records</h2>
+          <button
+            onClick={handleProntoUpdate}
+            disabled={prontoLoading}
+            className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium shadow transition
+              ${prontoLoading
+                ? "bg-blue-300 text-white cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 text-white"}`}
+            title="Pull latest items from PRONTO and update the database"
+          >
+            {prontoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            Update data from PRONTO
+          </button>
+        </div>
 
-      <div className="mb-3">
-        <input
-          type="text"
-          placeholder="🔍 Search description/title..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-          className="border px-2 py-1 text-sm w-1/3"
-        />
+        <div className="w-full sm:w-80">
+          <input
+            type="text"
+            placeholder="🔍 Search description/title..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
       <table className="table-auto w-full border-collapse text-sm">
@@ -90,14 +131,14 @@ const DatabaseManager = ({ refreshSignal }) => {
           {(records || []).map(record => (
             <tr key={record.id} className="border-t">
               {fields.map(f => (
-                <td key={f} className="border p-1">
+                <td key={f} className="border p-1 align-top">
                   {editId === record.id ? (
                     f === "category" ? (
                       <select
                         name={f}
                         value={edited[f] || ''}
                         onChange={handleChange}
-                        className="text-xs p-1 w-full"
+                        className="text-xs p-1 w-full border rounded"
                       >
                         <option value="">Select</option>
                         <option value="Precheck without PR">Precheck without PR</option>
@@ -109,8 +150,8 @@ const DatabaseManager = ({ refreshSignal }) => {
                         name={f}
                         value={edited[f] || ''}
                         onChange={handleChange}
-                        rows={["description", "resolution"].includes(f) ? "6" : "2"}
-                        className="w-full border p-1 text-xs"
+                        rows={["description","resolution"].includes(f) ? 6 : 2}
+                        className="w-full border p-1 text-xs rounded"
                       />
                     )
                   ) : (
@@ -121,13 +162,13 @@ const DatabaseManager = ({ refreshSignal }) => {
               <td className="border p-1 space-x-1">
                 {editId === record.id ? (
                   <>
-                    <button onClick={handleSave} className="text-green-600">💾</button>
-                    <button onClick={() => setEditId(null)} className="text-gray-500">✖</button>
+                    <button onClick={handleSave} className="text-green-600 hover:underline">💾 Save</button>
+                    <button onClick={() => setEditId(null)} className="text-gray-500 hover:underline">✖ Cancel</button>
                   </>
                 ) : (
                   <>
-                    <button onClick={() => { setEditId(record.id); setEdited({ ...record }); }} className="text-blue-600">✏️</button>
-                    <button onClick={() => handleDelete(record.id)} className="text-red-600">🗑️</button>
+                    <button onClick={() => { setEditId(record.id); setEdited({ ...record }); }} className="text-blue-600 hover:underline">✏️ Edit</button>
+                    <button onClick={() => handleDelete(record.id)} className="text-red-600 hover:underline">🗑️ Delete</button>
                   </>
                 )}
               </td>

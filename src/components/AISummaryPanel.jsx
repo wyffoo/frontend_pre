@@ -21,7 +21,7 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/extract`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Server error");
-      setResult({ ...data, pr_id: "", title: "", softwareRelease: "", softwareBuild: "", attachmentIds: "", groupIncharge: "", identification: "", explanation: "", category: "" });
+      setResult({ ...data, pr_id: "", title: "", softwareRelease: "", softwareBuild: "", attachmentIds: "", groupIncharge: "", identification: "", explanation: "", root_cause: "", category: "" });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,7 +59,7 @@ const AISummaryPanel = ({ files, result, setResult, loading, setLoading, onConfi
     { key: "softwareBuild", label: "Software Build" }, { key: "attachmentIds", label: "Attachment IDs" },
     { key: "groupIncharge", label: "Group In Charge" }, { key: "identification", label: "Identification" },
     { key: "resolution", label: "Resolution" }, { key: "subSystem", label: "Sub System" },
-    { key: "rootCause", label: "Root Cause" }, { key: "explanation", label: "Explanation" }
+    { key: "root_cause", label: "Root Cause" }, { key: "explanation", label: "Explanation" }
   ];
 
   return (
