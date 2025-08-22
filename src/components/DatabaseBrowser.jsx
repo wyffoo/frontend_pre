@@ -81,7 +81,7 @@ const DatabaseManager = ({ refreshSignal }) => {
       await fetchRecords();
     } catch (e) {
       console.error("PRONTO update failed:", e);
-      alert(`PRONTO 同步失败：${e.message}`);
+      alert(`PRONTO sync failed：${e.message}`);
     } finally {
       setProntoLoading(false);
     }
@@ -89,7 +89,6 @@ const DatabaseManager = ({ refreshSignal }) => {
 
   return (
     <section className="p-4 max-w-full overflow-x-auto">
-      {/* 顶部工具栏：标题 + PRONTO 更新按钮 + 搜索框 */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <h2 className="text-2xl font-bold text-blue-800">📘 Database Records</h2>
