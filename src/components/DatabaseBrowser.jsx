@@ -65,7 +65,7 @@ const DatabaseManager = ({ refreshSignal }) => {
     }
   };
 
-  // ✅ 调用后端 /pronto/sync，同步最近 100 条并刷新
+  // ✅ call /pronto/sync，sync latest 100 records
   const handleProntoUpdate = async () => {
     try {
       setProntoLoading(true);
